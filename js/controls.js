@@ -20,6 +20,8 @@ var manualRotation = quat.create(),
     manualRotateRate: new Float32Array([0, 0, 0]),  // Vector, camera-relative
 
     create: function() {
+      console.log('controls.create');
+
       playButton.addEventListener("click", function() {
         controls.playPause();
       });
@@ -82,7 +84,16 @@ var manualRotation = quat.create(),
       videoSelect.addEventListener("change", function() {
         projection = videoSelect.value[0];
         projectionSelect.value = projection;
+
+        // Remove the hash/querystring if there were custom video parameters.
+        window.history.pushState('', document.title, window.location.pathname);
+
         controls.loadVideo(videoSelect.value.substring(1));
+
+        var selectedOption = videoSelect.options[videoSelect.selectedIndex];
+        if ('autoplay' in selectedOption.dataset) {
+          controls.play();
+        }
       });
 
 
@@ -141,11 +152,18 @@ var manualRotation = quat.create(),
      * Video Commands
      */
     loaded: function() {
-      leftLoad.style.display = "none";
-      rightLoad.style.display = "none";
-      if (video.paused) {
-        leftPlay.style.display = "block";
-        rightPlay.style.display = "block";
+      if (window.leftLoad) {
+        window.leftLoad.style.display = 'none';
+        if (video.paused && window.leftPlay) {
+          window.leftPlay.style.display = 'block';
+        }
+      }
+
+      if (window.rightLoad) {
+        window.rightLoad.style.display = 'none';
+        if (video.paused && window.rightPlay) {
+          window.rightPlay.style.display = 'block';
+        }
       }
     },
 
@@ -155,22 +173,39 @@ var manualRotation = quat.create(),
       }
 
       video.play();
-      if (!video.paused) { // In case somehow hitting play button doesnt work
-        leftPlay.style.display = "none";
-        rightPlay.style.display = "none";
+      if (!video.paused) { // In case somehow hitting play button doesn't work.
+        if (window.leftPlay) {
+          window.leftPlay.style.display = 'none';
+        }
 
-        playButton.className = "fa fa-pause icon";
-        playButton.title = "Pause";
+        if (window.rightPlay) {
+          window.rightPlay.style.display = 'none';
+        }
+
+        if (window.playButton) {
+          window.playButton.className = 'fa fa-pause icon';
+          window.playButton.title = 'Pause';
+        }
+
         reqAnimFrameID = requestAnimationFrame(webGL.drawScene);
       }
     },
 
     pause: function() {
       video.pause();
-      playButton.className = "fa fa-play icon";
-      playButton.title = "Play";
-      leftPlay.style.display = "block";
-      rightPlay.style.display = "block";
+
+      if (window.playButton) {
+        window.playButton.className = 'fa fa-play icon';
+        window.playButton.title = 'Play';
+      }
+
+      if (window.leftPlay) {
+        window.leftPlay.style.display = 'block';
+      }
+
+      if (window.rightPlay) {
+        window.rightPlay.style.display = 'block';
+      }
     },
 
     playPause: function() {
@@ -181,14 +216,25 @@ var manualRotation = quat.create(),
       }
     },
 
+    setLooping: function(loop) {
+      loop = !!loop;
+      if (video.loop !== loop) {
+        controls.toggleLooping();
+      }
+    },
+
     toggleLooping: function() {
       if (video.loop === true) {
-        loopButton.className = "fa fa-refresh icon";
-        loopButton.title="Start Looping";
+        if (loopButton) {
+          loopButton.className = 'fa fa-refresh icon';
+          loopButton.title = 'Start Looping';
+        }
         video.loop = false;
       } else {
-        loopButton.className = "fa fa-chain-broken icon";
-        loopButton.title="Stop Looping";
+        if (loopButton) {
+          loopButton.className = 'fa fa-chain-broken icon';
+          loopButton.title = 'Stop Looping';
+        }
         video.loop = true;
       }
     },
@@ -203,14 +249,18 @@ var manualRotation = quat.create(),
 
     mute: function() {
       video.muted = true;
-      muteButton.className = "fa fa-volume-off icon";
-      muteButton.title = "Unmute";
+      if (muteButton) {
+        muteButton.className = 'fa fa-volume-off icon';
+        muteButton.title = 'Unmute';
+      }
     },
 
     unmute: function() {
       video.muted = false;
-      muteButton.className = "fa fa-volume-up icon";
-      muteButton.title = "Mute";
+      if (muteButton) {
+        muteButton.className = "fa fa-volume-up icon";
+        muteButton.title = "Mute";
+      }
     },
 
     selectLocalVideo: function() {
@@ -237,10 +287,18 @@ var manualRotation = quat.create(),
 
     loadVideo: function(videoFile) {
       controls.pause();
-      leftPlay.style.display = "none";
-      rightPlay.style.display = "none";
-      leftLoad.style.display = "block";
-      rightLoad.style.display = "block";
+      if (window.leftPlay) {
+        window.leftPlay.style.display = 'none';
+      }
+      if (window.rightPlay) {
+        window.rightPlay.style.display = 'none';
+      }
+      if (window.leftLoad) {
+        window.leftLoad.style.display = 'block';
+      }
+      if (window.rightLoad) {
+        window.rightLoad.style.display = 'block';
+      }
 
       webGL.gl.clear(webGL.gl.COLOR_BUFFER_BIT);
 
@@ -250,6 +308,7 @@ var manualRotation = quat.create(),
       }
 
       // Hack to fix rotation for vidcon video for vidcon
+      // TODO: Allow `manualRotation` to be overidden by querystring/hash/postMessage settings.
       if (videoFile === "videos/Vidcon.webm" || videoFile === "videos/Vidcon5.mp4") {
         manualRotation = [0.38175851106643677, -0.7102527618408203, -0.2401944249868393, 0.5404701232910156];
       } else {
