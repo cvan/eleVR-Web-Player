@@ -150,11 +150,11 @@ var manualRotation = quat.create(),
      * Video Commands
      */
     loaded: function() {
-      leftLoad.style.display = "none";
-      rightLoad.style.display = "none";
+      window.leftLoad.style.display = 'none';
+      window.rightLoad.style.display = 'none';
       if (video.paused) {
-        leftPlay.style.display = "block";
-        rightPlay.style.display = "block";
+        window.leftPlay.style.display = 'block';
+        window.rightPlay.style.display = 'block';
       }
     },
 
@@ -164,22 +164,25 @@ var manualRotation = quat.create(),
       }
 
       video.play();
-      if (!video.paused) { // In case somehow hitting play button doesnt work
-        leftPlay.style.display = "none";
-        rightPlay.style.display = "none";
+      if (!video.paused) { // In case somehow hitting play button doesn't work.
+        window.leftPlay.style.display = 'none';
+        window.rightPlay.style.display = 'none';
 
-        playButton.className = "fa fa-pause icon";
-        playButton.title = "Pause";
+        window.playButton.className = 'fa fa-pause icon';
+        window.playButton.title = 'Pause';
+
         reqAnimFrameID = requestAnimationFrame(webGL.drawScene);
       }
     },
 
     pause: function() {
       video.pause();
-      playButton.className = "fa fa-play icon";
-      playButton.title = "Play";
-      leftPlay.style.display = "block";
-      rightPlay.style.display = "block";
+
+      window.playButton.className = 'fa fa-play icon';
+      window.playButton.title = 'Play';
+
+      window.leftPlay.style.display = 'block';
+      window.rightPlay.style.display = 'block';
     },
 
     playPause: function() {
@@ -199,12 +202,16 @@ var manualRotation = quat.create(),
 
     toggleLooping: function() {
       if (video.loop === true) {
-        loopButton.className = "fa fa-refresh icon";
-        loopButton.title="Start Looping";
+        if (loopButton) {
+          loopButton.className = 'fa fa-refresh icon';
+          loopButton.title = 'Start Looping';
+        }
         video.loop = false;
       } else {
-        loopButton.className = "fa fa-chain-broken icon";
-        loopButton.title="Stop Looping";
+        if (loopButton) {
+          loopButton.className = 'fa fa-chain-broken icon';
+          loopButton.title = 'Stop Looping';
+        }
         video.loop = true;
       }
     },
@@ -219,14 +226,14 @@ var manualRotation = quat.create(),
 
     mute: function() {
       video.muted = true;
-      muteButton.className = "fa fa-volume-off icon";
-      muteButton.title = "Unmute";
+      window.muteButton.className = 'fa fa-volume-off icon';
+      window.muteButton.title = 'Unmute';
     },
 
     unmute: function() {
       video.muted = false;
-      muteButton.className = "fa fa-volume-up icon";
-      muteButton.title = "Mute";
+      window.muteButton.className = 'fa fa-volume-up icon';
+      window.muteButton.title = 'Mute';
     },
 
     selectLocalVideo: function() {
@@ -253,10 +260,10 @@ var manualRotation = quat.create(),
 
     loadVideo: function(videoFile) {
       controls.pause();
-      leftPlay.style.display = "none";
-      rightPlay.style.display = "none";
-      leftLoad.style.display = "block";
-      rightLoad.style.display = "block";
+      window.leftPlay.style.display = 'none';
+      window.rightPlay.style.display = 'none';
+      window.leftLoad.style.display = 'block';
+      window.rightLoad.style.display = 'block';
 
       webGL.gl.clear(webGL.gl.COLOR_BUFFER_BIT);
 
@@ -266,6 +273,7 @@ var manualRotation = quat.create(),
       }
 
       // Hack to fix rotation for vidcon video for vidcon
+      // TODO: Allow `manualRotation` to be overidden by querystring/hash/postMessage settings.
       if (videoFile === "videos/Vidcon.webm" || videoFile === "videos/Vidcon5.mp4") {
         manualRotation = [0.38175851106643677, -0.7102527618408203, -0.2401944249868393, 0.5404701232910156];
       } else {
@@ -300,6 +308,18 @@ var manualRotation = quat.create(),
       } else if (canvas.requestFullScreen){
         canvas.requestFullscreen();
       }
+    },
+
+    hide: function() {
+      window.videoControls.style.display = 'none';
+      window.messageL.style.display = 'none';
+      window.messageR.style.display = 'none';
+    },
+
+    show: function() {
+      window.videoControls.style.display = 'block';
+      window.messageL.style.display = 'block';
+      window.messageR.style.display = 'block';
     }
   };
 

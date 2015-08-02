@@ -81,6 +81,7 @@ a:active {
 }
 
 #video-controls {
+	display: none;
 	position: fixed;
 	bottom: 0;
 	left: 0;
@@ -124,4 +125,9 @@ select {
   margin: 0 auto;
   display: block;
   color: rgba(255,255,255,.5);
+}
+
+#message-l,
+#message-r {
+	display: none;
 }

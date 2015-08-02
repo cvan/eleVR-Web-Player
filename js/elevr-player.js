@@ -16,8 +16,6 @@
 
 var currentScreenOrientation = window.orientation || 0; // active default
 
-var shader;
-
 var timing = {showTiming: false, // Switch to true to show frame times in the console
               frameTime: 0,
               prevFrameTime: 0,
@@ -29,49 +27,80 @@ var timing = {showTiming: false, // Switch to true to show frame times in the co
               framesSinceIssue: 0
               };
 
-var container, playButton, muteButton, loopButton, fullScreenButton,
-    seekBar, videoSelect, projectionSelect, canvas, video,
-    leftLoad, rightLoad, leftPlay, rightPlay, playL, playR;
+var called = {};
+
 var videoObjectURL = null;
 var videoOptions = {};
 
-function initElements() {
-  container = document.getElementById("video-container");
-  container.style.width = window.innerWidth + "px";
-  container.style.height = window.innerHeight + "px";
-  leftLoad = document.getElementById("left-load");
-  rightLoad = document.getElementById("right-load");
-  leftPlay = document.getElementById("left-play");
-  rightPlay = document.getElementById("right-play");
-  canvas = document.getElementById("glcanvas");
-  video = document.getElementById("video");
+window.container = document.getElementById('video-container');
+
+function resizeContainer() {
+  window.container.style.width = window.innerWidth + 'px';
+  window.container.style.height = window.innerHeight + 'px';
+}
+
+window.addEventListener('resize', resizeContainer);
+
+function setupControls() {
+  if (called.setupControls) {
+    return;
+  }
+
+  window.videoControls = document.getElementById('video-controls');
+  window.messageL = document.getElementById('message-l');
+  window.messageR = document.getElementById('message-r');
+
+  resizeContainer();
+
+  window.canvas = document.getElementById('glcanvas');
+  window.video = document.getElementById('video');
+
+  window.leftLoad = document.getElementById('left-load');
+  window.rightLoad = document.getElementById('right-load');
+  window.leftPlay = document.getElementById('left-play');
+  window.rightPlay = document.getElementById('right-play');
 
   // Buttons
-  playButton = document.getElementById("play-pause");
-  playL = document.getElementById("play-l");
-  playR = document.getElementById("play-r");
-  muteButton = document.getElementById("mute");
-  loopButton = document.getElementById("loop");
-  fullScreenButton = document.getElementById("full-screen");
+  window.playButton = document.getElementById('play-pause');
+  window.playL = document.getElementById('play-l');
+  window.playR = document.getElementById('play-r');
+  window.muteButton = document.getElementById('mute');
+  window.loopButton = document.getElementById('loop');
+  window.fullScreenButton = document.getElementById('full-screen');
 
   // Sliders
-  seekBar = document.getElementById("seek-bar");
+  window.seekBar = document.getElementById('seek-bar');
 
   // Selectors
-  videoSelect = document.getElementById("video-select");
-  projectionSelect = document.getElementById("projection-select");
+  window.videoSelect = document.getElementById('video-select');
+  window.projectionSelect = document.getElementById('projection-select');
 
   document.getElementById('title-l').style.fontSize = window.outerHeight / 20 + 'px';
   document.getElementById('title-r').style.fontSize = window.outerHeight / 20 + 'px';
-  document.getElementById('message-l').style.fontSize = window.outerHeight / 30 + 'px';
-  document.getElementById('message-r').style.fontSize = window.outerHeight / 30 + 'px';
+
+  window.messageL.style.fontSize = window.outerHeight / 30 + 'px';
+  window.messageR.style.fontSize = window.outerHeight / 30 + 'px';
+
+  // Keep a record of all the videos that are in the drop-down menu.
+  if (window.videoSelect) {
+    Array.prototype.slice.call(window.videoSelect.options).forEach(function(option) {
+      videoOptions[option.value] = option;
+    });
+  }
+
+  controls.create();
+
+  called.setupControls = true;
 }
 
 function runEleVRPlayer() {
-  webVR.initWebVR();
+  if (called.runEleVRPlayer) {
+    return;
+  }
 
-  initElements();
-  controls.create();
+  setupControls();
+
+  webVR.initWebVR();
 
   webGL.initWebGL();
 
@@ -85,7 +114,7 @@ function runEleVRPlayer() {
     // Keyboard Controls
     controls.enableKeyControls();
 
-    shader = new webGL.Shader({
+    window.shader = new webGL.Shader({
       fragmentShaderName: 'shader-fs',
       vertexShaderName: 'shader-vs',
       attributes: ['aVertexPosition'],
@@ -97,26 +126,46 @@ function runEleVRPlayer() {
 
     video.addEventListener("canplaythrough", controls.loaded);
     video.addEventListener("ended", controls.ended);
-
-    // Keep a record of all the videos that are in the drop-down menu.
-    Array.prototype.slice.call(videoSelect.options).forEach(function(option) {
-      videoOptions[option.value] = option;
-    });
-
-    initFromSettings(window.location.hash || window.location.search);
   }
+
+  initFromSettings(window.location.hash || window.location.search);
+
+  called.runEleVRPlayer = true;
 }
 
 function initFromSettings(newSettings) {
   if (!newSettings) {
+    controls.show();
     return;
   }
+
+  // TODO: Consider making `autoplay` the default if `controls` are hidden.
 
   var settings = util.getTruthyURLSearchParams(newSettings, {
     autoplay: false,
     projection: 'mono',
-    loop: true
+    loop: true,
+    controls: true,
+    fullscreen: window.top !== window.self  // iframe should default to fullscreen.
   });
+
+  if (settings.mute || settings.unmute === false) {
+    controls.mute();
+  }
+
+  if (settings.unmute || settings.mute === false) {
+    controls.unmute();
+  }
+
+  if (settings.controls) {
+    controls.show();
+  } else {
+    controls.hide();
+  }
+
+  if (settings.fullscreen) {
+    controls.fullscreen();
+  }
 
   if (!settings.projection) {
     // Hack because we coerce '0' to `false` in `util.getTruthyURLSearchParams`.
@@ -138,7 +187,7 @@ function initFromSettings(newSettings) {
   if (settings.video) {
     video.innerHTML = '';
 
-    if (videoSelect) {
+    if (window.videoSelect) {
       var optionValue = settings.projection + settings.video;
 
       if (optionValue in videoOptions) {
@@ -159,7 +208,7 @@ function initFromSettings(newSettings) {
 
         videoOptions[optionValue] = option;
 
-        videoSelect.appendChild(option);
+        window.videoSelect.appendChild(option);
       }
     }
 
@@ -178,6 +227,9 @@ window.addEventListener('hashchange', function() {
 });
 
 window.addEventListener('message', function(e) {
+  // Remove the querystring if there were custom video parameters.
+  window.history.pushState('', document.title, window.location.pathname);
+
   if (typeof e.data === 'object') {
     window.location.hash = '#' + JSON.stringify(e.data);
   } else if (typeof e.data === 'string') {
