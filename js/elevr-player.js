@@ -163,10 +163,6 @@ function initFromSettings(newSettings) {
     controls.hide();
   }
 
-  if (settings.fullscreen) {
-    controls.fullscreen();
-  }
-
   if (!settings.projection) {
     // Hack because we coerce '0' to `false` in `util.getTruthyURLSearchParams`.
     settings.projection = '0';

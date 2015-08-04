@@ -117,7 +117,20 @@ var manualRotation = quat.create(),
       }
 
       function onkey(event) {
-        switch (String.fromCharCode(event.charCode)) {
+        if (event.keyCode === 37 || event.keyCode === 39 || event.keyCode === 90) {
+          window.top.postMessage({
+            event: {
+              keyCode: event.keyCode,
+              charCode: event.charCode
+            }
+          }, '*');
+          return;
+        }
+
+        var key = String.fromCharCode(event.charCode);
+        console.log('> iframe', key);
+
+        switch (key) {
         case 'f':
           controls.fullscreen();
           break;
@@ -136,6 +149,16 @@ var manualRotation = quat.create(),
         case 'l':
           controls.toggleLooping();
           break;
+        case 'c':
+        case 'n':
+        case 'u':
+          window.top.postMessage({
+            event: {
+              keyCode: event.keyCode,
+              charCode: event.charCode
+            }
+          }, '*');
+          break;
         }
       }
 
@@ -144,6 +167,15 @@ var manualRotation = quat.create(),
       document.addEventListener('keyup', function(event) { key(event, -1); },
               false);
       window.addEventListener("keypress", onkey, true);
+      window.addEventListener('click', function (e) {
+        controls.fullscreen();
+      });
+      window.addEventListener('message', function (e) {
+        if (typeof e.data === 'object' && e.data.event) {
+          console.log('got keypress from parent window', e.data.event);
+          onkey(e.data.event);
+        }
+      });
     },
 
     /**
